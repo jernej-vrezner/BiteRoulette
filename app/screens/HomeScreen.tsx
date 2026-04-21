@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import RouletteSpinner from '../components/RouletteSpinner';
 
 export default function HomeScreen() {
-    const { filters, setFilters, setLoading, setError, setRestaurants, setSelected, isLoading } = useAppStore();
+    const { filters, setFilters, setLoading, setError, setRestaurants, setSelected, isLoading, setUserLocation } = useAppStore();
     const navigation = useNavigation<any>();
 
     const toggleCuisine = (value: string) => {
@@ -31,6 +31,7 @@ export default function HomeScreen() {
 
         const location = await Location.getCurrentPositionAsync({});
         const { latitude, longitude } = location.coords;
+        setUserLocation({ lat: latitude, lon: longitude });
 
         const results = await fetchRestaurants(latitude, longitude, filters);
         const picked = pickRandom(results);

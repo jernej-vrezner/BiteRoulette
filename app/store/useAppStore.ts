@@ -10,6 +10,7 @@ export interface Store {
     isLoading: boolean;
     error: string | null;
     saved: UserRestaurant[];
+    userLocation: { lat: number; lon: number } | null;
 
     // Akcije
     setFilters: (filters: Filters) => void;
@@ -18,6 +19,7 @@ export interface Store {
     setError: (error: string | null) => void;
     setRestaurants: (restaurants: Restaurant[]) => void;
     saveRestaurant: (restaurant: UserRestaurant) => void;
+    setUserLocation: (loc: { lat: number; lon: number } | null) => void;
 }
 
 export const useAppStore = create<Store>((set) => ({
@@ -32,18 +34,20 @@ export const useAppStore = create<Store>((set) => ({
     isLoading: false,
     error: null,
     saved: [],
+    userLocation: null,
 
     // Implementacija akcij
-    setFilters:     (filters)     => set({ filters }),
-    setSelected:    (restaurant)  => set({ selected: restaurant }),
-    setLoading:     (loading)     => set({ isLoading: loading }),
-    setError:       (error)       => set({ error }),
-    setRestaurants: (restaurants) => set({ restaurants }),
+    setFilters:      (filters)     => set({ filters }),
+    setSelected:     (restaurant)  => set({ selected: restaurant }),
+    setLoading:      (loading)     => set({ isLoading: loading }),
+    setError:        (error)       => set({ error }),
+    setRestaurants:  (restaurants) => set({ restaurants }),
+    setUserLocation: (loc)         => set({ userLocation: loc }),
     saveRestaurant: (restaurant) => {
-    set((state) => {
-        const updated = [...state.saved, restaurant];
-        AsyncStorage.setItem('saved', JSON.stringify(updated)); // shrani na disk
-        return { saved: updated };
-    });
-},
+        set((state) => {
+            const updated = [...state.saved, restaurant];
+            AsyncStorage.setItem('saved', JSON.stringify(updated));
+            return { saved: updated };
+        });
+    },
 }));
