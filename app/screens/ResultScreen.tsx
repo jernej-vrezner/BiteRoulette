@@ -1,10 +1,14 @@
 import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
 import { useNavigation } from '@react-navigation/native';
+import { pickRandom } from '../services/overpassService';
+import { useState } from 'react'; 
+
 
 export default function ResultScreen() {
-    const { selected } = useAppStore();
     const navigation = useNavigation<any>();
+    const { selected, restaurants, setSelected, saveRestaurant } = useAppStore();
+    const [saved, setSaved] = useState(false);
 
     if (!selected) {
         return (
@@ -39,14 +43,29 @@ export default function ResultScreen() {
                 style={styles.buttonOutline}
                 onPress={() => navigation.goBack()}
             >
-                <Text style={styles.buttonTextOutline}>🎰 Zavrti znova</Text>
+                <TouchableOpacity
+                    style={styles.buttonOutline}
+                    onPress={() => setSelected(pickRandom(restaurants))}
+                >
+                    <Text style={styles.buttonTextOutline}>🎲 Daj mi drugo</Text>
+                    </TouchableOpacity>
             </TouchableOpacity>
 
             <TouchableOpacity
                 style={styles.buttonOutline}
                 onPress={() => console.log('shrani')}
             >
-                <Text style={styles.buttonTextOutline}>💾 Shrani</Text>
+                <TouchableOpacity
+                    style={saved ? styles.buttonSaved : styles.buttonOutline}
+                    onPress={() => {
+                        saveRestaurant({ ...selected, savedAt: new Date().toISOString() });
+                        setSaved(true);
+                    }}
+                >
+                    <Text style={saved ? styles.buttonTextSaved : styles.buttonTextOutline}>
+                        {saved ? '✅ Shranjeno!' : '💾 Shrani'}
+                    </Text>
+                </TouchableOpacity>
             </TouchableOpacity>
         </View>
     );
@@ -100,6 +119,19 @@ const styles = StyleSheet.create({
     },
     buttonTextOutline: {
         color: '#FF6B35',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    buttonSaved: {
+    borderWidth: 2,
+    borderColor: 'green',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 12,
+    },
+    buttonTextSaved: {
+        color: 'green',
         fontSize: 16,
         fontWeight: 'bold',
     },

@@ -84,6 +84,12 @@ export default function HomeScreen() {
                     <Text style={styles.buttonText}>🎰 ZAVRTI</Text>
                 </TouchableOpacity>
             </ScrollView>
+            <TouchableOpacity 
+                style={styles.savedButton}
+                onPress={() => navigation.navigate('Saved')}
+            >
+                <Text style={styles.savedButtonText}>💾 Shranjene restavracije</Text>
+            </TouchableOpacity>
 
             {isLoading && (
                 <View style={styles.loadingOverlay}>
@@ -163,5 +169,15 @@ const styles = StyleSheet.create({
         fontSize: 18,
         marginTop: 16,
         color: '#555',
+    },
+    savedButton: {
+    alignItems: 'center',
+    marginTop: 16,
+    padding: 12,
+    },
+    savedButtonText: {
+        color: '#FF6B35',
+        fontSize: 15,
+        fontWeight: '500',
     },
 });

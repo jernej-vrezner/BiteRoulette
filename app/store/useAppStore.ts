@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Filters, Restaurant, UserRestaurant } from '../types/restaurant';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface Store {
     // Podatki
@@ -38,7 +39,11 @@ export const useAppStore = create<Store>((set) => ({
     setLoading:     (loading)     => set({ isLoading: loading }),
     setError:       (error)       => set({ error }),
     setRestaurants: (restaurants) => set({ restaurants }),
-    saveRestaurant: (restaurant)  => set((state) => ({
-        saved: [...state.saved, restaurant],
-    })),
+    saveRestaurant: (restaurant) => {
+    set((state) => {
+        const updated = [...state.saved, restaurant];
+        AsyncStorage.setItem('saved', JSON.stringify(updated)); // shrani na disk
+        return { saved: updated };
+    });
+},
 }));
