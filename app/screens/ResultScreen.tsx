@@ -89,15 +89,10 @@ export default function ResultScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-                style={isSaved ? styles.buttonSaved : styles.buttonOutline}
-                onPress={() => {
-                    saveRestaurant({ ...selected, savedAt: new Date().toISOString() });
-                    setIsSaved(true);
-                }}
+                style={styles.buttonOutline}
+                onPress={() => navigation.navigate('LogVisit', { restaurant: selected })}
             >
-                <Text style={isSaved ? styles.buttonTextSaved : styles.buttonTextOutline}>
-                    {isSaved ? '✅ Shranjeno!' : '💾 Shrani'}
-                </Text>
+                <Text style={styles.buttonTextOutline}>📝 Zabeleži obisk</Text>
             </TouchableOpacity>
         </Animated.View>
     );

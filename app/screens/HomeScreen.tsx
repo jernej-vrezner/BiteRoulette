@@ -6,6 +6,8 @@ import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import RouletteSpinner from '../components/RouletteSpinner';
 import { useState } from 'react';
+import { signOut } from 'firebase/auth';
+import { auth } from '../services/firebaseService';
 
 export default function HomeScreen() {
     const { filters, setFilters, setLoading, setError, setRestaurants, setSelected, isLoading, setUserLocation } = useAppStore();
@@ -61,7 +63,12 @@ export default function HomeScreen() {
     return (
         <>
             <ScrollView contentContainerStyle={styles.container}>
-                <Text style={styles.title}>🎰 biteRoulette</Text>
+                <View style={styles.header}>
+                    <Text style={styles.title}>🎰 biteRoulette</Text>
+                    <TouchableOpacity onPress={() => signOut(auth)}>
+                        <Text style={styles.logoutText}>Odjava</Text>
+                    </TouchableOpacity>
+                </View>
 
                 {/* Kategorije */}
                 <Text style={styles.sectionTitle}>Tip hrane</Text>
@@ -173,11 +180,20 @@ const styles = StyleSheet.create({
         paddingTop: 60,
         paddingBottom: 20,
     },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 40,
+    },
     title: {
         fontSize: 32,
         fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 40,
+    },
+    logoutText: {
+        color: '#FF6B35',
+        fontSize: 14,
+        fontWeight: '500',
     },
     sectionTitle: {
         fontSize: 18,
