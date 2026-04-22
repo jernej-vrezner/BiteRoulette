@@ -8,6 +8,8 @@ export interface Restaurant {
   openingHours?: string;
   phone?: string;
   website?: string;
+  rating?: number;      // 1.0 - 5.0
+  priceLevel?: string;  // €, €€, €€€, €€€€
 }
 
 export interface UserRestaurant extends Restaurant {

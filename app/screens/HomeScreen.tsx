@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
-import { CUISINE_OPTIONS, fetchRestaurants, pickRandom } from '../services/overpassService';
+import { CUISINE_OPTIONS, fetchRestaurants, pickRandom } from '../services/googlePlacesService';
 import Slider from '@react-native-community/slider';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';

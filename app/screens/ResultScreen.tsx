@@ -1,7 +1,7 @@
 import { Animated, View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
 import { useNavigation } from '@react-navigation/native';
-import { pickRandom, calculateDistance } from '../services/overpassService';
+import { pickRandom, calculateDistance } from '../services/googlePlacesService';
 import { useState, useRef, useEffect } from 'react';
 
 export default function ResultScreen() {
@@ -63,6 +63,12 @@ export default function ResultScreen() {
             )}
             {distanceText && (
                 <Text style={styles.distance}>🚶 {distanceText}</Text>
+            )}
+            {selected.rating && (
+                <Text style={styles.rating}>⭐ {selected.rating.toFixed(1)}</Text>
+            )}
+            {selected.priceLevel && (
+                <Text style={styles.price}>{selected.priceLevel}</Text>
             )}
 
             <TouchableOpacity
@@ -166,4 +172,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
+    rating: { fontSize: 15, color: '#555', marginTop: 8 },
+    price: { fontSize: 15, color: '#555', marginTop: 4 },
 });
