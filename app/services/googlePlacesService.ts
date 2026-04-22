@@ -3,18 +3,62 @@ import { Restaurant, Filters } from '../types/restaurant';
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ?? '';
 const BASE_URL = 'https://places.googleapis.com/v1/places:searchNearby';
 
-// Mapping naših filtrov na Google Places tipe
-export const CUISINE_OPTIONS = [
-  { label: '🍕 Pizza',          value: 'pizza_restaurant' },
-  { label: '🍔 Burger',         value: 'hamburger_restaurant' },
-  { label: '🍣 Sushi',          value: 'sushi_restaurant' },
-  { label: '🌮 Mehiška',        value: 'mexican_restaurant' },
-  { label: '🍜 Azijska',        value: 'asian_restaurant' },
-  { label: '🫒 Mediteranska',   value: 'mediterranean_restaurant' },
-  { label: '🥩 Žar',            value: 'barbecue_restaurant' },
-  { label: '🌱 Vegetarijansko', value: 'vegetarian_restaurant' },
-  { label: '🍝 Italijanska',    value: 'italian_restaurant' },
-  { label: '🍱 Japonska',       value: 'japanese_restaurant' },
+// Hierarhične kategorije kuhinj
+export const CUISINE_CATEGORIES = [
+  {
+    label: '🌍 Evropska',
+    value: 'european',
+    options: [
+      { label: 'Italijanska',   value: 'italian_restaurant' },
+      { label: 'Mediteranska',  value: 'mediterranean_restaurant' },
+      { label: 'Grška',         value: 'greek_restaurant' },
+      { label: 'Španska',       value: 'spanish_restaurant' },
+      { label: 'Francoska',     value: 'french_restaurant' },
+    ],
+  },
+  {
+    label: '🌏 Azijska',
+    value: 'asian',
+    options: [
+      { label: 'Japonska',   value: 'japanese_restaurant' },
+      { label: 'Sushi',      value: 'sushi_restaurant' },
+      { label: 'Ramen',      value: 'ramen_restaurant' },
+      { label: 'Kitajska',   value: 'chinese_restaurant' },
+      { label: 'Tajska',     value: 'thai_restaurant' },
+      { label: 'Indijska',   value: 'indian_restaurant' },
+      { label: 'Korejska',   value: 'korean_restaurant' },
+      { label: 'Vietnamska', value: 'vietnamese_restaurant' },
+    ],
+  },
+  {
+    label: '🌎 Ameriška',
+    value: 'american',
+    options: [
+      { label: 'Burger',    value: 'hamburger_restaurant' },
+      { label: 'BBQ',       value: 'barbecue_restaurant' },
+      { label: 'Mehiška',   value: 'mexican_restaurant' },
+      { label: 'Brazilska', value: 'brazilian_restaurant' },
+    ],
+  },
+  {
+    label: '🥩 Meso',
+    value: 'meat',
+    options: [
+      { label: 'Steak', value: 'steak_house' },
+    ],
+  },
+  {
+    label: '🥗 Posebne',
+    value: 'special',
+    options: [
+      { label: 'Vegetarijansko', value: 'vegetarian_restaurant' },
+      { label: 'Vegansko',       value: 'vegan_restaurant' },
+      { label: 'Morska hrana',   value: 'seafood_restaurant' },
+      { label: 'Zajtrk/Brunch',  value: 'breakfast_restaurant' },
+      { label: 'Pizza',          value: 'pizza_restaurant' },
+      { label: 'Hitra hrana',    value: 'fast_food_restaurant' },
+    ],
+  },
 ];
 
 // Pretvori Google Places odgovor v naš Restaurant tip
@@ -74,6 +118,7 @@ export async function fetchRestaurants(
         radius: filters.radius,
       },
     },
+    ...(filters.openNow && { openNow: true }),
   };
 
   const response = await fetch(BASE_URL, {
