@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebaseService';
+import { COLORS, FONTS } from '../constants/theme';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
@@ -14,10 +15,8 @@ export default function LoginScreen() {
     const handleSubmit = async () => {
         setError(null);
         setLoading(true);
-
         try {
             if (isRegister) {
-                // Registracija — ustvari račun + Firestore profil
                 const credential = await createUserWithEmailAndPassword(auth, email, password);
                 await setDoc(doc(db, 'users', credential.user.uid), {
                     email: credential.user.email,
@@ -26,11 +25,9 @@ export default function LoginScreen() {
                     totalSpent: 0,
                 });
             } else {
-                // Prijava
                 await signInWithEmailAndPassword(auth, email, password);
             }
         } catch (e: any) {
-            // Firebase vrne angleške napake — prevedemo najpogostejše
             const msg: Record<string, string> = {
                 'auth/invalid-email': 'Neveljaven email naslov.',
                 'auth/user-not-found': 'Uporabnik ne obstaja.',
@@ -39,7 +36,7 @@ export default function LoginScreen() {
                 'auth/weak-password': 'Geslo mora imeti vsaj 6 znakov.',
                 'auth/invalid-credential': 'Napačen email ali geslo.',
             };
-            setError(msg[e.code] ?? 'Prišlo je do napake. Poskusi znova.');
+            setError(msg[e.code] ?? 'Prišlo je do napake.');
         } finally {
             setLoading(false);
         }
@@ -50,39 +47,52 @@ export default function LoginScreen() {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <Text style={styles.title}>🎰 biteRoulette</Text>
-            <Text style={styles.subtitle}>{isRegister ? 'Ustvari račun' : 'Prijava'}</Text>
+            <View style={styles.header}>
+                <Text style={styles.emoji}>🎰</Text>
+                <Text style={styles.title}>biteRoulette</Text>
+                <Text style={styles.subtitle}>Odkrivaj restavracije v svoji okolici</Text>
+            </View>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Geslo"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
+            <View style={styles.form}>
+                <Text style={styles.formTitle}>{isRegister ? 'Ustvari račun' : 'Dobrodošel nazaj'}</Text>
 
-            {error && <Text style={styles.error}>{error}</Text>}
+                <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    placeholderTextColor={COLORS.textTertiary}
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Geslo"
+                    placeholderTextColor={COLORS.textTertiary}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                />
 
-            <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-                {loading
-                    ? <ActivityIndicator color="white" />
-                    : <Text style={styles.buttonText}>{isRegister ? 'Registracija' : 'Prijava'}</Text>
-                }
-            </TouchableOpacity>
+                {error && (
+                    <View style={styles.errorBox}>
+                        <Text style={styles.errorText}>{error}</Text>
+                    </View>
+                )}
 
-            <TouchableOpacity onPress={() => { setIsRegister(!isRegister); setError(null); }}>
-                <Text style={styles.toggle}>
-                    {isRegister ? 'Že imaš račun? Prijavi se.' : 'Nimaš računa? Registriraj se.'}
-                </Text>
-            </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
+                    {loading
+                        ? <ActivityIndicator color="white" />
+                        : <Text style={styles.buttonText}>{isRegister ? 'Registracija' : 'Prijava'}</Text>
+                    }
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => { setIsRegister(!isRegister); setError(null); }}>
+                    <Text style={styles.toggle}>
+                        {isRegister ? 'Že imaš račun? Prijavi se.' : 'Nimaš računa? Registriraj se.'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
         </KeyboardAvoidingView>
     );
 }
@@ -90,52 +100,74 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: COLORS.background,
         justifyContent: 'center',
-        padding: 32,
-        backgroundColor: 'white',
+        padding: 24,
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    emoji: {
+        fontSize: 56,
+        marginBottom: 12,
     },
     title: {
-        fontSize: 36,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 8,
+        ...FONTS.largeTitle,
+        letterSpacing: -0.5,
     },
     subtitle: {
-        fontSize: 20,
+        ...FONTS.callout,
+        marginTop: 6,
         textAlign: 'center',
-        color: '#555',
-        marginBottom: 32,
+    },
+    form: {
+        backgroundColor: COLORS.card,
+        borderRadius: 20,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 },
+    },
+    formTitle: {
+        ...FONTS.title3,
+        marginBottom: 20,
     },
     input: {
-        borderWidth: 1.5,
-        borderColor: '#ddd',
+        backgroundColor: COLORS.background,
         borderRadius: 12,
         padding: 14,
         fontSize: 16,
-        marginBottom: 16,
+        color: COLORS.textPrimary,
+        marginBottom: 12,
+    },
+    errorBox: {
+        backgroundColor: '#FFF1F0',
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 12,
+    },
+    errorText: {
+        color: COLORS.error,
+        fontSize: 14,
     },
     button: {
-        backgroundColor: '#FF6B35',
+        backgroundColor: COLORS.primary,
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 14,
         alignItems: 'center',
-        marginTop: 8,
+        marginTop: 4,
     },
     buttonText: {
         color: 'white',
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 16,
+        fontWeight: '600',
     },
     toggle: {
         textAlign: 'center',
-        color: '#FF6B35',
-        marginTop: 20,
+        color: COLORS.primary,
+        marginTop: 16,
         fontSize: 15,
-    },
-    error: {
-        color: 'red',
-        textAlign: 'center',
-        marginBottom: 12,
-        fontSize: 14,
     },
 });

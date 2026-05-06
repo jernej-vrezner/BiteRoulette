@@ -19,15 +19,22 @@ export interface UserRestaurant extends Restaurant {
   savedAt?: string;
 }
 
+export interface VisitRatings {
+  hrana: number;       // 1-5
+  pijaca: number;      // 1-5
+  postrezba: number;   // 1-5
+  ambient: number;     // 1-5
+}
+
 export interface Visit {
   id?: string;
   restaurantId: string;
   restaurantName: string;
   address?: string;
   cuisine?: string[];
-  personalRating: number;      // 1-5 zvezdice
+  ratings: VisitRatings;
   amountSpent: number;         // v EUR
-  dishEaten: string;           // kaj si jedel
+  dishesEaten: string[];       // seznam jedi
   visitedAt: string;           // ISO datum
   notes?: string;              // opcijska opomba
   createdAt: string;

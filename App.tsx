@@ -10,6 +10,7 @@ import ResultScreen from './app/screens/ResultScreen';
 import SavedScreen from './app/screens/SavedScreen';
 import LoginScreen from './app/screens/LoginScreen';
 import LogVisitScreen from './app/screens/LogVisitScreen';
+import ProfileScreen from './app/screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -44,6 +45,7 @@ export default function App() {
                     <Stack.Screen name="Result" component={ResultScreen} options={{ title: 'Rezultat' }} />
                     <Stack.Screen name="Saved" component={SavedScreen} options={{ title: 'Shranjene' }} />
                     <Stack.Screen name="LogVisit" component={LogVisitScreen} options={{ title: 'Zabeleži obisk' }} />
+                    <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profil' }} />
                 </Stack.Navigator>
             ) : (
                 // Ni prijavljen → pokaži login

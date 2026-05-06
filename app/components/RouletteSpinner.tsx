@@ -4,9 +4,9 @@ import Svg, { Path, Circle, Line } from 'react-native-svg';
 
 const SEGMENTS = 12;
 const COLORS = [
-  '#FF6B35', '#2C3E50', '#FF6B35', '#2C3E50',
-  '#FF6B35', '#2C3E50', '#FF6B35', '#2C3E50',
-  '#FF6B35', '#2C3E50', '#FF6B35', '#2C3E50',
+  '#C96B4E', '#2C2C2E', '#C96B4E', '#2C2C2E',
+  '#C96B4E', '#2C2C2E', '#C96B4E', '#2C2C2E',
+  '#C96B4E', '#2C2C2E', '#C96B4E', '#2C2C2E',
 ];
 
 function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
@@ -76,7 +76,7 @@ export default function RouletteSpinner() {
 
           {/* Notranji krog */}
           <Circle cx={cx} cy={cy} r={18} fill="#1a1a1a" />
-          <Circle cx={cx} cy={cy} r={10} fill="#FF6B35" />
+          <Circle cx={cx} cy={cy} r={10} fill="#C96B4E" />
 
           {/* Delilne črte */}
           {Array.from({ length: SEGMENTS }).map((_, i) => {
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 20,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: '#FF6B35',
+    borderBottomColor: '#C96B4E',
     marginBottom: -4,
     zIndex: 10,
   },

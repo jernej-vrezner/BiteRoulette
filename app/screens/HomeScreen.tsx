@@ -8,12 +8,11 @@ import RouletteSpinner from '../components/RouletteSpinner';
 import { useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../services/firebaseService';
+import { COLORS, FONTS } from '../constants/theme';
 
 export default function HomeScreen() {
-    const { filters, setFilters, setLoading, setError, setRestaurants, setSelected, isLoading, setUserLocation } = useAppStore();
+    const { filters, setFilters, setLoading, setError, setRestaurants, setSelected, isLoading, setUserLocation, error } = useAppStore();
     const navigation = useNavigation<any>();
-
-    // Izbrane kategorije (seznam)
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
     const toggleCategory = (value: string) => {
@@ -22,7 +21,6 @@ export default function HomeScreen() {
         );
     };
 
-    // Vse podkategorije iz vseh izbranih kategorij
     const activeOptions = CUISINE_CATEGORIES
         .filter(c => selectedCategories.includes(c.value))
         .flatMap(c => c.options);
@@ -38,41 +36,61 @@ export default function HomeScreen() {
     const handleSpin = async () => {
         setLoading(true);
         setError(null);
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                setError('Dovoli dostop do lokacije v nastavitvah.');
+                setLoading(false);
+                return;
+            }
+            const location = await Location.getCurrentPositionAsync({});
+            const { latitude, longitude } = location.coords;
+            setUserLocation({ lat: latitude, lon: longitude });
 
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-            setError('Dovoli dostop do lokacije!');
+            const results = await fetchRestaurants(latitude, longitude, filters);
+            if (results.length === 0) {
+                setError('Ni restavracij z izbranimi filtri. Poskusi povečati razdaljo ali spremeniti filtre.');
+                setLoading(false);
+                return;
+            }
+            const picked = pickRandom(results);
+            setRestaurants(results);
+            setSelected(picked);
             setLoading(false);
-            return;
+            navigation.navigate('Result');
+        } catch (e: any) {
+            setLoading(false);
+            if (e.message?.includes('Network') || e.message?.includes('fetch')) {
+                setError('Ni internetne povezave. Preveri WiFi ali mobilne podatke.');
+            } else {
+                setError('Prišlo je do napake. Poskusi znova.');
+            }
         }
-
-        const location = await Location.getCurrentPositionAsync({});
-        const { latitude, longitude } = location.coords;
-        setUserLocation({ lat: latitude, lon: longitude });
-
-        const results = await fetchRestaurants(latitude, longitude, filters);
-        const picked = pickRandom(results);
-
-        setRestaurants(results);
-        setSelected(picked);
-        setLoading(false);
-
-        navigation.navigate('Result');
     };
 
     return (
         <>
-            <ScrollView contentContainerStyle={styles.container}>
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+
+                {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.title}>🎰 biteRoulette</Text>
-                    <TouchableOpacity onPress={() => signOut(auth)}>
-                        <Text style={styles.logoutText}>Odjava</Text>
-                    </TouchableOpacity>
+                    <View>
+                        <Text style={styles.title}>biteRoulette</Text>
+                        <Text style={styles.headerSub}>Kaj boš jedel danes?</Text>
+                    </View>
+                    <View style={styles.headerButtons}>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Profile')}>
+                            <Text style={styles.iconBtnText}>👤</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.iconBtn} onPress={() => signOut(auth)}>
+                            <Text style={styles.iconBtnText}>↩️</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Kategorije */}
-                <Text style={styles.sectionTitle}>Tip hrane</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+                <Text style={styles.sectionLabel}>TIP HRANE</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                     {CUISINE_CATEGORIES.map((cat) => (
                         <TouchableOpacity
                             key={cat.value}
@@ -86,7 +104,7 @@ export default function HomeScreen() {
                     ))}
                 </ScrollView>
 
-                {/* Podkategorije — prikažejo se samo ko je vsaj ena kategorija izbrana */}
+                {/* Podkategorije */}
                 {activeOptions.length > 0 && (
                     <View style={styles.subcategoryGrid}>
                         {activeOptions.map((option, index) => {
@@ -106,7 +124,7 @@ export default function HomeScreen() {
                     </View>
                 )}
 
-                {/* Prikaz izbranih filtrov */}
+                {/* Izbrani filtri */}
                 {filters.cuisines.length > 0 && (
                     <View style={styles.selectedRow}>
                         <Text style={styles.selectedLabel}>Izbrano: </Text>
@@ -125,43 +143,50 @@ export default function HomeScreen() {
                     </View>
                 )}
 
-                {/* Razdalja */}
-                <Text style={styles.sectionTitle}>
-                    Razdalja: {Math.round(filters.radius)}m
-                </Text>
-                <Slider
-                    minimumValue={200}
-                    maximumValue={5000}
-                    value={filters.radius}
-                    step={100}
-                    minimumTrackTintColor="#FF6B35"
-                    thumbTintColor="#FF6B35"
-                    onValueChange={(value) => setFilters({ ...filters, radius: value })}
-                />
-
-                {/* Odprto zdaj */}
-                <View style={styles.switchRow}>
-                    <Text style={styles.sectionTitle}>Odprto zdaj</Text>
-                    <Switch
-                        value={filters.openNow}
-                        trackColor={{ true: '#FF6B35' }}
-                        onValueChange={(value) => setFilters({ ...filters, openNow: value })}
+                {/* Filters kartica */}
+                <View style={styles.filtersCard}>
+                    <View style={styles.filterRow}>
+                        <Text style={styles.filterLabel}>Razdalja</Text>
+                        <Text style={styles.filterValue}>{Math.round(filters.radius)}m</Text>
+                    </View>
+                    <Slider
+                        minimumValue={200}
+                        maximumValue={5000}
+                        value={filters.radius}
+                        step={100}
+                        minimumTrackTintColor={COLORS.primary}
+                        thumbTintColor={COLORS.primary}
+                        maximumTrackTintColor={COLORS.border}
+                        onValueChange={(value) => setFilters({ ...filters, radius: value })}
                     />
+                    <View style={styles.divider} />
+                    <View style={styles.filterRow}>
+                        <Text style={styles.filterLabel}>Odprto zdaj</Text>
+                        <Switch
+                            value={filters.openNow}
+                            trackColor={{ true: COLORS.primary, false: COLORS.border }}
+                            thumbColor="white"
+                            onValueChange={(value) => setFilters({ ...filters, openNow: value })}
+                        />
+                    </View>
                 </View>
 
-                {/* ZAVRTI gumb */}
-                <TouchableOpacity style={styles.button} onPress={handleSpin}>
-                    <Text style={styles.buttonText}>🎰 ZAVRTI</Text>
-                </TouchableOpacity>
-            </ScrollView>
+                {/* Error */}
+                {error && (
+                    <View style={styles.errorCard}>
+                        <Text style={styles.errorText}>⚠️ {error}</Text>
+                        <TouchableOpacity onPress={() => setError(null)}>
+                            <Text style={styles.errorDismiss}>✕</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
 
-            {/* Shranjene */}
-            <TouchableOpacity
-                style={styles.savedButton}
-                onPress={() => navigation.navigate('Saved')}
-            >
-                <Text style={styles.savedButtonText}>💾 Shranjene restavracije</Text>
-            </TouchableOpacity>
+                {/* ZAVRTI */}
+                <TouchableOpacity style={styles.spinButton} onPress={handleSpin} activeOpacity={0.85}>
+                    <Text style={styles.spinButtonText}>🎰  ZAVRTI</Text>
+                </TouchableOpacity>
+
+            </ScrollView>
 
             {/* Loading overlay */}
             {isLoading && (
@@ -175,143 +200,107 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        padding: 24,
-        paddingTop: 60,
-        paddingBottom: 20,
-    },
+    scroll: { backgroundColor: COLORS.background },
+    container: { padding: 24, paddingTop: 64, paddingBottom: 40 },
+
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 40,
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-    },
-    logoutText: {
-        color: '#FF6B35',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 12,
-        marginTop: 8,
-    },
-    // Horizontalni scroll za kategorije
-    categoryScroll: {
-        marginBottom: 16,
-    },
-    categoryChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        borderWidth: 2,
-        borderColor: '#FF6B35',
-        marginRight: 8,
-    },
-    categoryChipSelected: {
-        backgroundColor: '#FF6B35',
-    },
-    categoryText: {
-        color: '#FF6B35',
-        fontWeight: '600',
-        fontSize: 14,
-    },
-    categoryTextSelected: {
-        color: 'white',
-    },
-    // Podkategorije
-    subcategoryGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: 16,
-    },
-    chip: {
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-        borderRadius: 16,
-        borderWidth: 1.5,
-        borderColor: '#FF6B35',
-    },
-    chipSelected: {
-        backgroundColor: '#FF6B35',
-    },
-    chipText: {
-        color: '#FF6B35',
-        fontWeight: '500',
-        fontSize: 13,
-    },
-    chipTextSelected: {
-        color: 'white',
-    },
-    // Izbrani filtri
-    selectedRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFF0EB',
-        padding: 10,
-        borderRadius: 10,
-        marginBottom: 16,
-        gap: 4,
-    },
-    selectedLabel: {
-        color: '#FF6B35',
-        fontWeight: '600',
-        fontSize: 13,
-    },
-    selectedValue: {
-        color: '#555',
-        fontSize: 13,
-        flex: 1,
-    },
-    clearText: {
-        color: '#FF6B35',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    switchRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         marginBottom: 32,
     },
-    button: {
-        backgroundColor: '#FF6B35',
-        padding: 18,
-        borderRadius: 16,
-        alignItems: 'center',
-        marginTop: 8,
+    title: {
+        fontSize: 30,
+        fontWeight: '700',
+        color: COLORS.textPrimary,
+        letterSpacing: -0.5,
     },
-    buttonText: {
-        color: 'white',
-        fontSize: 20,
-        fontWeight: 'bold',
+    headerSub: {
+        ...FONTS.caption,
+        marginTop: 2,
     },
+    headerButtons: { flexDirection: 'row', gap: 8, marginTop: 4 },
+    iconBtn: {
+        width: 38, height: 38, borderRadius: 19,
+        backgroundColor: COLORS.card,
+        alignItems: 'center', justifyContent: 'center',
+        shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6,
+        elevation: 2,
+    },
+    iconBtnText: { fontSize: 17 },
+
+    sectionLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: COLORS.textTertiary,
+        letterSpacing: 1,
+        marginBottom: 10,
+    },
+    chipScroll: { marginBottom: 12 },
+    categoryChip: {
+        paddingHorizontal: 16, paddingVertical: 9,
+        borderRadius: 20, borderWidth: 1.5,
+        borderColor: COLORS.border,
+        marginRight: 8, backgroundColor: COLORS.card,
+    },
+    categoryChipSelected: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    categoryText: { color: COLORS.textSecondary, fontWeight: '600', fontSize: 14 },
+    categoryTextSelected: { color: 'white' },
+
+    subcategoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+    chip: {
+        paddingHorizontal: 14, paddingVertical: 7,
+        borderRadius: 14, borderWidth: 1.5,
+        borderColor: COLORS.border, backgroundColor: COLORS.card,
+    },
+    chipSelected: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+    chipText: { color: COLORS.textSecondary, fontWeight: '500', fontSize: 13 },
+    chipTextSelected: { color: COLORS.primary, fontWeight: '600' },
+
+    selectedRow: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: COLORS.primaryLight,
+        padding: 10, borderRadius: 10, marginBottom: 16, gap: 4,
+    },
+    selectedLabel: { color: COLORS.primary, fontWeight: '600', fontSize: 13 },
+    selectedValue: { color: COLORS.textSecondary, fontSize: 13, flex: 1 },
+    clearText: { color: COLORS.primary, fontWeight: 'bold', fontSize: 16 },
+
+    filtersCard: {
+        backgroundColor: COLORS.card, borderRadius: 16, padding: 20,
+        marginBottom: 16,
+        shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10,
+        shadowOffset: { width: 0, height: 2 }, elevation: 2,
+    },
+    filterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    filterLabel: { ...FONTS.body, fontWeight: '500' },
+    filterValue: { ...FONTS.body, color: COLORS.primary, fontWeight: '600' },
+    divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 14 },
+
+    errorCard: {
+        backgroundColor: '#FFF1F0', borderWidth: 1.5, borderColor: '#FFCCC7',
+        borderRadius: 12, padding: 14, flexDirection: 'row',
+        alignItems: 'center', marginBottom: 12, gap: 10,
+    },
+    errorText: { flex: 1, color: COLORS.error, fontSize: 14, lineHeight: 20 },
+    errorDismiss: { color: COLORS.error, fontSize: 18, fontWeight: 'bold' },
+
+    spinButton: {
+        backgroundColor: COLORS.primary, padding: 18,
+        borderRadius: 16, alignItems: 'center', marginTop: 8,
+        shadowColor: COLORS.primary, shadowOpacity: 0.35,
+        shadowRadius: 12, shadowOffset: { width: 0, height: 6 },
+        elevation: 6,
+    },
+    spinButtonText: { color: 'white', fontSize: 18, fontWeight: '700', letterSpacing: 1 },
+
     loadingOverlay: {
-        position: 'absolute',
-        top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'white',
-        justifyContent: 'center',
-        alignItems: 'center',
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: COLORS.background,
+        justifyContent: 'center', alignItems: 'center',
     },
-    loadingText: {
-        fontSize: 18,
-        marginTop: 16,
-        color: '#555',
-    },
-    savedButton: {
-        alignItems: 'center',
-        padding: 12,
-        backgroundColor: 'white',
-    },
-    savedButtonText: {
-        color: '#FF6B35',
-        fontSize: 15,
-        fontWeight: '500',
-    },
+    loadingText: { ...FONTS.callout, marginTop: 16 },
 });
